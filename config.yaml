@@ -1,0 +1,13 @@
+postgres:
+  addr: postgres
+  port: "5432"
+  password: resu_qe
+  user: eq_user
+  db: eq_db
+queueengine:
+  addr: queueengine
+  port: "8181"
+kafka:
+  broker: kafka:9092
+  topic: ticket-topic
+  batch_size: 1
