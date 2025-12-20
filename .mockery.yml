@@ -1,0 +1,15 @@
+packages:
+  github.com/snnus/mainservice/internal/services/mainservice:
+    interfaces:
+      MainStorage:
+        config:
+          dir: internal/services/mainservice/mocks
+          filename: storage.go
+      MainClient:
+        config:
+          dir: internal/services/mainservice/mocks
+          filename: client.go
+      MainProducer:
+        config:
+          dir: internal/services/mainservice/mocks
+          filename: producer.go

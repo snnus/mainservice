@@ -15,6 +15,7 @@ type ServicePoint struct {
 	OfficeNumber string    `json:"officeNumber"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
+	ShardID      int       `json:"shard_id"`
 }
 
 type Ticket struct {
