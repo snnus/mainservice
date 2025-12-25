@@ -30,6 +30,7 @@ type PgConfig struct {
 	Password string `yaml:"password"`
 	User     string `yaml:"user"`
 	DB       string `yaml:"db"`
+	NShards  uint32 `yaml:"n_shards"`
 }
 
 func LoadConfig(filename string) (*Config, error) {

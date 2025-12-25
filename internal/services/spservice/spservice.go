@@ -1,4 +1,4 @@
-package mainservice
+package spservice
 
 import (
 	"context"
@@ -8,35 +8,34 @@ import (
 	"github.com/snnus/mainservice/internal/models"
 )
 
-type MainStorage interface {
-	CreateServicePoint(ctx context.Context, sp models.NewServicePointRequest) (*models.ServicePoint, error)
-	UpdateServicePoint(ctx context.Context, id string, sp models.NewServicePointRequest) (*models.ServicePoint, error)
+type SPStorage interface {
+	UpsertServicePoint(ctx context.Context, id string, sp models.NewServicePointRequest) (*models.ServicePoint, error)
 	DeleteServicePoint(ctx context.Context, id string) (*models.ServicePoint, error)
 	GetServicePointByID(ctx context.Context, id string) (*models.ServicePoint, error)
 	GetShortNameById(ctx context.Context, is string) (string, error)
 	GetOfficeNumberById(ctx context.Context, is string) (string, error)
 }
 
-type MainClient interface {
+type SPClient interface {
 	Enqueue(ctx context.Context, id string, shortname string) (*models.Ticket, error)
 	Dequeue(ctx context.Context, id string) (*models.Ticket, error)
 }
 
-type MainProducer interface {
+type SPProducer interface {
 	PublishTicket(ctx context.Context, ticket, officeNumber string) error
 }
 
-type MainService struct {
-	storage    MainStorage
-	httpClient MainClient
-	producer   MainProducer
+type SPService struct {
+	storage    SPStorage
+	httpClient SPClient
+	producer   SPProducer
 }
 
-func NewMainService(storage MainStorage, httpClient MainClient, producer MainProducer) *MainService {
-	return &MainService{storage: storage, httpClient: httpClient, producer: producer}
+func NewSPService(storage SPStorage, httpClient SPClient, producer SPProducer) *SPService {
+	return &SPService{storage: storage, httpClient: httpClient, producer: producer}
 }
 
-func (m *MainService) CreateNewSP(ctx context.Context, sp models.NewServicePointRequest) (*models.ServicePoint, error) {
+func (m *SPService) UpsertSP(ctx context.Context, id string, sp models.NewServicePointRequest) (*models.ServicePoint, error) {
 	if sp.Name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -46,31 +45,14 @@ func (m *MainService) CreateNewSP(ctx context.Context, sp models.NewServicePoint
 	if sp.OfficeNumber == "" {
 		return nil, fmt.Errorf("office number is required")
 	}
-	createdSP, err := m.storage.CreateServicePoint(ctx, sp)
-	if err != nil {
-		return nil, err
-	}
-	return createdSP, err
-}
-
-func (m *MainService) UpdateSP(ctx context.Context, id string, sp models.NewServicePointRequest) (*models.ServicePoint, error) {
-	if sp.Name == "" {
-		return nil, fmt.Errorf("name is required")
-	}
-	if sp.ShortName == "" {
-		return nil, fmt.Errorf("short name is required")
-	}
-	if sp.OfficeNumber == "" {
-		return nil, fmt.Errorf("office number is required")
-	}
-	updatedSP, err := m.storage.UpdateServicePoint(ctx, id, sp)
+	updatedSP, err := m.storage.UpsertServicePoint(ctx, id, sp)
 	if err != nil {
 		return nil, err
 	}
 	return updatedSP, err
 }
 
-func (m *MainService) DeleteSP(ctx context.Context, id string) (*models.ServicePoint, error) {
+func (m *SPService) DeleteSP(ctx context.Context, id string) (*models.ServicePoint, error) {
 	deletedSP, err := m.storage.DeleteServicePoint(ctx, id)
 	if err != nil {
 		return nil, err
@@ -78,7 +60,7 @@ func (m *MainService) DeleteSP(ctx context.Context, id string) (*models.ServiceP
 	return deletedSP, err
 }
 
-func (m *MainService) GetSPByID(ctx context.Context, id string) (*models.ServicePoint, error) {
+func (m *SPService) GetSPByID(ctx context.Context, id string) (*models.ServicePoint, error) {
 	sp, err := m.storage.GetServicePointByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -90,7 +72,7 @@ func (m *MainService) GetSPByID(ctx context.Context, id string) (*models.Service
 
 // }
 
-func (m *MainService) Enqueue(ctx context.Context, id string) (*models.Ticket, error) {
+func (m *SPService) Enqueue(ctx context.Context, id string) (*models.Ticket, error) {
 	shortName, err := m.storage.GetShortNameById(ctx, id)
 	if err != nil {
 		return nil, err
@@ -104,7 +86,7 @@ func (m *MainService) Enqueue(ctx context.Context, id string) (*models.Ticket, e
 	return ticket, nil
 }
 
-func (m *MainService) Dequeue(ctx context.Context, id string) (*models.Ticket, error) {
+func (m *SPService) Dequeue(ctx context.Context, id string) (*models.Ticket, error) {
 	ticket, err := m.httpClient.Dequeue(ctx, id)
 	if err != nil {
 		return nil, err

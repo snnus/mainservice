@@ -4,6 +4,7 @@ postgres:
   password: resu_qe
   user: eq_user
   db: eq_db
+  n_shards: 4
 queueengine:
   addr: queueengine
   port: "8181"

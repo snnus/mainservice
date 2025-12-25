@@ -11,7 +11,7 @@ import (
 	"github.com/snnus/mainservice/internal/handlers"
 	"github.com/snnus/mainservice/internal/producer"
 	"github.com/snnus/mainservice/internal/services/mainservice"
-	"github.com/snnus/mainservice/internal/storage/pgstorage"
+	"github.com/snnus/mainservice/internal/storage/spstorage"
 )
 
 func main() {
@@ -21,29 +21,26 @@ func main() {
 		panic(err)
 	}
 
-	db, err := pgstorage.NewConnection(*cfg)
+	spClient := client.NewClient(cfg)
+	spProducer := producer.NewSPProducer(cfg)
+
+	spStorage, close, err := spstorage.NewSPStorage(cfg)
 
 	if err != nil {
 		panic(err)
 	}
+	defer close()
 
-	defer db.Close()
-
-	mainClient := client.NewClient(cfg)
-	mainProducer := producer.NewKafkaProducer(cfg)
-
-	mainStorage := pgstorage.NewPGStorage(db)
-	mainService := mainservice.NewMainService(mainStorage, mainClient, mainProducer)
-	mainHandler := handlers.NewMainHandler(mainService)
+	spService := mainservice.NewSPService(spStorage, spClient, spProducer)
+	spHandler := handlers.NewSPHandler(spService)
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/servicepoint", mainHandler.CreateNewSP).Methods("POST")
-	r.HandleFunc("/servicepoint/{id:[0-9]+}", mainHandler.UpdateSP).Methods("PUT")
-	r.HandleFunc("/servicepoint/{id:[0-9]+}", mainHandler.GetSP).Methods("GET")
-	r.HandleFunc("/servicepoint/{id:[0-9]+}", mainHandler.DeleteSP).Methods("DELETE")
-	r.HandleFunc("/enqueue/{id:[0-9]+}", mainHandler.Enqueue).Methods("POST")
-	r.HandleFunc("/dequeue/{id:[0-9]+}", mainHandler.Dequeue).Methods("POST")
+	r.HandleFunc("/servicepoint/{id:[0-9]+}", spHandler.UpsertSP).Methods("PUT", "POST")
+	r.HandleFunc("/servicepoint/{id:[0-9]+}", spHandler.GetSP).Methods("GET")
+	r.HandleFunc("/servicepoint/{id:[0-9]+}", spHandler.DeleteSP).Methods("DELETE")
+	r.HandleFunc("/enqueue/{id:[0-9]+}", spHandler.Enqueue).Methods("POST")
+	r.HandleFunc("/dequeue/{id:[0-9]+}", spHandler.Dequeue).Methods("POST")
 
 	log.Print("listening now")
 

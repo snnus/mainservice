@@ -16,11 +16,11 @@ type TicketMessage struct {
 	Timestamp    string `json:"timestamp"`
 }
 
-type KafkaProducer struct {
+type SPProducer struct {
 	writer *kafka.Writer
 }
 
-func NewKafkaProducer(cfg *config.Config) *KafkaProducer {
+func NewSPProducer(cfg *config.Config) *SPProducer {
 	writer := &kafka.Writer{
 		Addr:         kafka.TCP(cfg.Kafka.Broker),
 		Topic:        cfg.Kafka.Topic,
@@ -30,12 +30,12 @@ func NewKafkaProducer(cfg *config.Config) *KafkaProducer {
 		RequiredAcks: kafka.RequireOne,
 		Async:        false,
 	}
-	return &KafkaProducer{
+	return &SPProducer{
 		writer: writer,
 	}
 }
 
-func (kp *KafkaProducer) PublishTicket(ctx context.Context, ticket, officeNumber string) error {
+func (kp *SPProducer) PublishTicket(ctx context.Context, ticket, officeNumber string) error {
 	msg := TicketMessage{
 		Ticket:       ticket,
 		OfficeNumber: officeNumber,
@@ -57,6 +57,6 @@ func (kp *KafkaProducer) PublishTicket(ctx context.Context, ticket, officeNumber
 	return nil
 }
 
-func (kp *KafkaProducer) Close() error {
+func (kp *SPProducer) Close() error {
 	return kp.writer.Close()
 }
